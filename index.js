@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 
 const app = express()
 const port = process.env.PORT || 5000;
@@ -87,7 +87,7 @@ async function run() {
           $set: user,
         };
         const result = await userCollection.updateOne(filter, updateDoc, options);
-        const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN_SECRET,{ expiresIn: '1h' })
+        const token = jwt.sign({email: email}, process.env.ACCESS_TOKEN_SECRET,{ expiresIn: '1d' })
         res.send({result, token});
       });
     
@@ -133,7 +133,15 @@ async function run() {
        else{
         return res.status(403).send({message: 'Forbidden access'});
        }
-      })
+      });
+
+      app.get('/booking/:id',verifyJWT, async(req,res) => {
+        const id = req.params.id;
+        const query = {_id: ObjectId(id)};
+        const booking = await bookingCollection.findOne(query);
+        res.send(booking);
+      });
+
       app.post('/booking', async(req, res) => {
         const booking = req.body;
         const query = {treatment: booking.treatment, date: booking.date, patient: booking.patient};
